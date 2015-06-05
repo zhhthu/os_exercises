@@ -49,6 +49,17 @@
 1. (spoc) 理解文件访问的执行过程，即在ucore运行过程中通过`cprintf`函数来完整地展现出来读一个文件在ucore中的整个执行过程，(越全面细致越好)
 完成代码填写，并形成spoc练习报告，需写练习报告和简单编码，完成后放到git server 对应的git repo中
 
+- 以lab8_result 中sh.c 的读取为例展现读文件的过程。读文件按照文件系统架构的层次可分为如下的部分：文件访问的系统调用接口->VFS接口->FS（lab8中为SFS）接口->文件系统IO设备接口。读取sh.c文件并执行，其中调用的主线是在proc.c的user_mian中，通过在内核线程加载usermain函数，而user_main函数调用系统调用，加载sh文件，然后执行下面的调用链：
+
+    sys_exec->do_execve->sysfile_open->file_open->vfs_open->vfs_lookup->vop_lookup(sfs_lookup)->sfs_lookup_once-        >sfs_load_inode->sfs_create_inode->vop_init(inode_init)
+    在file_open中，创建了一个新的inode指针,最后的inode_init将具体的SFS操作和inode绑定
+    
+    上述初始化完成后，读取sh中的elf文件内容时，是实际的读取调用链：
+    do_execve->load_icode->load_icode_read->sysfile_read->file_read->vop_read(sfs_read)->sfs_io->sfs_io_nolock->sfs_rblock->sfs_rwblock_nolock->dop_io
+    到dop_io时，已从SFS层进入设备io层
+    
+
 2. （spoc） 在下面的实验代码的基础上，实现基于文件系统的pipe IPC机制
 
 ### 练习用的[lab8 spoc exercise project source code](https://github.com/chyyuu/ucore_lab/tree/master/labcodes_answer/lab8_result)
+
